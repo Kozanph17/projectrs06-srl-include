@@ -1,0 +1,1291 @@
+//Projectrs06 SRL Include (P06)
+//Last Update [12/2/13][D/M/Y]
+//Currently Developed by DannyRS, rjj95, John, Shatterhand, Awkwardsaw
+
+Const
+  P06_VersionNumber='1.0';
+
+Var
+  P06_PName,P06_PPass,P06_PlayerName,P06_PlayerPass: String;
+  P06_ClientHeight,P06_ClientWidth: Integer;
+  P06_Outline_Black,P06_outline_white,P06_outline_yellow: Integer;
+  P06_MSX1,P06_MSX2,P06_MSY1,P06_MSY2: Integer;
+  P06_MIX1,P06_MIX2,P06_MIY1,P06_MIY2: Integer;
+  P06_MMX1,P06_MMX2,P06_MMY1,P06_MMY2: Integer;
+  P06_CompassX1,P06_CompassX2,P06_CompassY1,P06_CompassY2: Integer;
+  P06_MSCX,P06_MSCY,P06_MICX,P06_MICY,P06_MMCX,P06_MMCY: Integer;
+  P06_CompassDTM,P06_FlagDTM: Integer;
+  P06_MouseSpeed: Integer;
+
+//Credits to Harry and Shuttleu
+procedure AutoUpdateMe;
+var
+    NewFile : Integer;
+    OnlineVersion, NewScript, NewFileName : String;
+begin
+  begin
+    Writeln('Checking P06Include VersionNumber');
+    OnlineVersion := GetPage('http://projectrs06-srl-include.googlecode.com/files/P06Include-VersionNumber.txt');
+    Writeln('P06Include Local  : ' + P06_VersionNumber);
+    Writeln('P06Include Latest : ' + OnlineVersion);
+    if (Trim(OnlineVersion) > P06_VersionNumber) then
+    begin
+      Writeln('New P06Include Version Available! Updating...');
+      NewScript := GetPage('http://projectrs06-srl-include.googlecode.com/files/P06Include.simba');
+      NewFileName := AppPath + 'Includes\P06Include\P06Include.simba';
+      NewFile := RewriteFile(NewFileName, true);
+      try
+        WriteFileString(NewFile, NewScript);
+      except
+        begin
+          Writeln('Fatal error writing to ' + NewFileName + '!');
+          TerminateScript;
+        end;
+      end;
+      CloseFile(NewFile);
+      Writeln('New P06Include Version Downloaded Please Restart Your Script!');
+      TerminateScript;
+    end else
+      writeln('You Have The Latest Version of P06Include');
+  end;
+end;
+
+Procedure P06_MouseBox(X1, Y1, X2, Y2: Integer; ClickType: Integer);
+Begin
+  MMouse(RandomRange(X1,X2),RandomRange(Y1,Y2),0,0);
+  ClickMouse2(ClickType);
+  Wait(RandomRange(37,50));
+End;
+
+Procedure P06_TypeFast(Text: String);
+Var
+  I: Integer;
+Begin
+  For I:=1 To Length(Text) Do
+    SendKeys(Text[I],RandomRange(60,120),RandomRange(60,120));
+    Wait(RandomRange(110,250));
+End;
+
+Procedure P06_UseKey(KeyToUse: Word);
+Begin
+  KeyDown(KeyToUse);
+  Wait(RandomRange(59,91));
+  KeyUp(KeyToUse);
+  Wait(RandomRange(40,150));
+End;
+
+Function P06_LoggedIn: Boolean;
+Begin
+  //White text on Report Abuse Button
+  Result := (GetColor(422, 481) = 16777215);
+End;
+
+(*
+GetUpText
+~~~~~~~~~
+
+.. code-block:: pascal
+
+    function GetUpText : string;
+
+Returns the text in the upperleft corner of Project06 (often referred to as UpText).
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+*)
+Function P06_GetUpText: String;
+Var
+  WhiteT,BlueT,YellowT,OrangeT,FoundText: String;
+Begin
+  WhiteT:=GetTextAtExWrap(8, 8, 80, 21, 0, 5, 1, 14541281, 55, 'P06UpChars');
+  BlueT:=GetTextAtExWrap(35, 8, 150, 21, 0, 5, 1, 13423640, 65, 'P06UpChars');
+  YellowT:=GetTextAtExWrap(35, 8, 150, 21, 0, 5, 1, 1235160, 40, 'P06UpChars');
+  OrangeT:=GetTextAtExWrap(35, 8, 150, 21, 0, 5, 1, 4687583, 53, 'P06UpChars');
+  FoundText:=WhiteT + ' ' + BlueT + YellowT + OrangeT;
+  FoundText:= ReplaceWrap(FoundText, '.', '',[rfReplaceAll]);
+  FoundText:= ReplaceWrap(FoundText, '/', '',[rfReplaceAll]);
+  FoundText:= ReplaceWrap(FoundText, '\', '',[rfReplaceAll]);
+  FoundText:= ReplaceWrap(FoundText, ',', '',[rfReplaceAll]);
+  FoundText:= ReplaceWrap(FoundText, '*', '',[rfReplaceAll]);
+  FoundText:= ReplaceWrap(FoundText, '^', '',[rfReplaceAll]);
+  FoundText:= ReplaceWrap(FoundText, '"', '',[rfReplaceAll]);
+  Result:=FoundText;
+End;
+
+(*
+IsUpTextMultiCustom
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function IsUpTextMultiCustom(Text: TStringArray): Boolean;
+
+Checks for the occurance of any of the strings in the array.
+
+.. note::
+
+    by Starblaster100 & Nielsie95 & Freddy1990
+
+Example:
+
+.. code-block:: pascal
+
+    IsUpTextMultiCustom(['Att', 'ttac', 'ack', 'monst', 'ster'])
+
+*)
+Function P06_IsUpTextMultiCustom(Text: TStringArray): Boolean;
+Var
+  TheText: String;
+  i, n: Integer;
+Begin
+  TheText := P06_GetUpText;
+  n := High(Text);
+  For i := 0 to n do
+    If (Pos(Text[i], TheText) > 0) then
+    Begin
+      Result := True;
+      Exit;
+    End;
+End;
+
+Function P06_ContainsText(CheckText: String; Text: TStringArray): Boolean;
+Var
+  TheText: String;
+  i, n: Integer;
+Begin
+  TheText := CheckText;
+  n := High(Text);
+  For i := 0 to n do
+    If (Pos(Text[i], TheText) > 0) then
+    Begin
+      Result := True;
+      Exit;
+    End;
+End;
+
+Procedure P06_LoginPlayer;
+Var
+  X,Y,Attempts: Integer;
+Begin
+  Repeat Begin
+    If (GetTextAtExWrap(270, 213, 407, 225, 0, 5, 1, P06_outline_yellow, 20, 'P06UpChars') = 'Enter your username') Then
+    Begin
+      WriteLn('Enter your username & password');
+      If Not (FindColor(x, y, P06_outline_white, 363, 250, 540, 264)) Then
+      Begin
+        If (P06_PlayerName = '') Then
+        Begin
+          WriteLn('Player Name Not Entered, Or Use P06_DeclarePlayer Before SetupP06Include');
+          TerminateScript;
+        End;
+        P06_MouseBox(365, 253, 480, 258, mouse_left);
+        P06_TypeFast(P06_PName);
+      End;
+      If Not (FindColor(x, y, P06_outline_white, 363, 266, 540, 275)) Then
+      Begin
+        If (P06_PlayerPass = '') Then
+        Begin
+          WriteLn('Player Password Not Entered, Or Use P06_DeclarePlayer Before SetupP06Include');
+          TerminateScript;
+        End;
+        P06_MouseBox(365, 268, 480, 275, mouse_left);
+        P06_TypeFast(P06_PPass);
+      End;
+      Wait(RandomRange(100, 200));
+      P06_MouseBox(230, 303, 372, 338, mouse_left);
+      Wait(RandomRange(300, 500));
+    End;
+    If (GetTextAtExWrap(300, 240, 373, 255, 0, 5, 1, P06_outline_yellow, 20, 'P06UpChars') = 'Welcome to') Then
+    Begin
+      WriteLn('Welcome to Project RS06');
+      P06_MouseBox(392, 273, 531, 309, mouse_left);
+      Wait(RandomRange(100, 200));
+    End;
+    If (GetTextAtExWrap(281, 213, 395, 225, 0, 5, 1, P06_outline_yellow, 20, 'P06UpChars') = 'Invalid username') Then
+    Begin
+      WriteLn('Invalid username or password');
+      If (FindColor(x, y, P06_outline_white, 363, 250, 540, 264)) Then
+      Begin
+        P06_MouseBox(550, 253, 553, 258, mouse_left);
+        Repeat P06_UseKey(8);
+        Until Not (FindColor(x, y, P06_outline_white, 363, 250, 540, 264))
+      End;
+      If (FindColor(x, y, P06_outline_white, 363, 266, 540, 275)) Then
+      Begin
+        P06_MouseBox(550, 268, 553, 275, mouse_left);
+        Repeat P06_UseKey(8);
+        Until Not (FindColor(x, y, P06_outline_white, 363, 266, 540, 275))
+      End;
+      Attempts:=Attempts+1;
+      P06_MouseBox(392, 302, 531, 338, mouse_left);
+      Wait(RandomRange(100, 200));
+      Continue;
+    End;
+    If (GetTextAtExWrap(307, 213, 398, 227, 0, 5, 1, P06_outline_yellow, 20, 'P06UpChars') = 'Connecting to') Then
+    Begin
+      WriteLn('Connecting to server...');
+      Wait(RandomRange(300, 500));
+    End;
+    If (GetTextAtExWrap(293, 213, 403, 230, 0, 5, 1, P06_outline_yellow, 20, 'P06UpChars') = 'Error connecting') Then
+    Begin
+      WriteLn('Error connecting to server');
+      Attempts:=Attempts+1;
+      P06_MouseBox(392, 302, 531, 338, mouse_left);
+      Wait(RandomRange(3300, 5500));
+      Continue;
+    End;
+    If (GetTextAtExWrap(270, 205, 356, 217, 0, 5, 1, P06_outline_yellow, 20, 'P06UpChars') = 'Your account') Then
+    Begin
+      WriteLn('Your account is already logged in.');
+      Attempts:=Attempts+1;
+      P06_MouseBox(392, 302, 531, 338, mouse_left);
+      Wait(RandomRange(7300, 15500));
+      Continue;
+    End;
+    If (GetColor(130, 90) = 0) And (GetColor(450, 300) = 0) Then
+    Begin
+      Repeat Begin
+        WriteLn('MainScreen Still Black...Waiting');
+        Wait(RandomRange(200, 500));
+      End; Until Not (GetColor(130, 90) = 0) Or Not (GetColor(450, 300) = 0)
+      Continue;
+    End;
+  End; Until (P06_LoggedIn) Or (Attempts > 5)
+  If (P06_LoggedIn) Then
+    Attempts:=0;
+  If (Attempts > 5) Then
+  Begin
+    WriteLn('Too Many Failed Login Attempts');
+    TerminateScript;
+  End;
+  Wait(RandomRange(1300, 2100));
+End;
+
+(*
+P06_ItemExists
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Function P06_ItemExists(SlotToCheck: Integer): Boolean;
+
+Checks if there is an Item in Inventory slot and returns true or false.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    If P06_ItemExists(0) Then DoSomething();
+
+*)
+Function P06_ItemExists(SlotToCheck: Integer): Boolean;
+Var
+  xsx,ysy,x,y,R,C:Integer;
+Begin
+  xsx:=569;
+  ysy:=217;
+  C:=(Round(SlotToCheck/4));
+  R:=(SlotToCheck -(C*4));
+  If FindColor(x, y, P06_outline_black, xsx+(R*42), ysy+(C*36), xsx+(R*42)+30, ysy+(C*36)+24) Then
+  Begin
+    Result:=True;
+  End;
+End;
+
+(*
+P06_InvFull
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Function P06_InvFull: Boolean;
+
+Checks if the player's inventory is full and returns true or false.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    If P06_InvFull Then DoSomething();
+
+*)
+Function P06_InvFull: Boolean;
+Var
+  xsx,ysy,x,y,R,C:Integer;
+  FoundAnItem: Boolean;
+Begin
+  FoundAnItem:=True;
+  xsx:=569;
+  ysy:=217;
+  For R:=0 To 3 Do
+  Begin
+    For C:=0 To 6 Do
+    Begin
+      If Not FindColor(x, y, P06_outline_black, xsx+(R*42), ysy+(C*36), xsx+(R*42)+30, ysy+(C*36)+24) Then
+      Begin
+        FoundAnItem:=False;
+      End;
+    End;
+  End;
+  Result:=FoundAnItem;
+End;
+
+(*
+P06_InvEmpty
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Function P06_InvEmpty: Boolean;
+
+Checks if the player's inventory is empty and returns true or false.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    If P06_InvEmpty Then DoSomething();
+
+*)
+Function P06_InvEmpty: Boolean;
+Var
+  xsx,ysy,x,y,R,C:Integer;
+  FoundAnItem: Boolean;
+Begin
+  FoundAnItem:=True;
+  xsx:=569;
+  ysy:=217;
+  For R:=0 To 3 Do
+  Begin
+    For C:=0 To 6 Do
+    Begin
+      If FindColor(x, y, P06_outline_black, xsx+(R*42), ysy+(C*36), xsx+(R*42)+30, ysy+(C*36)+24) Then
+      Begin
+        FoundAnItem:=False;
+      End;
+    End;
+  End;
+  Result:=FoundAnItem;
+End;
+
+(*
+P06_InvCount
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function P06_InvCount : Integer;
+
+Chooses an option on the right click game Choose Option pannel.
+
+.. note::
+
+    by Shatterhand
+
+Example:
+
+.. code-block:: pascal
+
+    Integer:=P06_InvCount;
+
+*)
+function P06_InvCount : Integer;
+var
+  i : Integer;
+begin
+  Result := 0;
+  for i:=0 to 27 do
+    if P06_ItemExists(i) then
+      Inc(Result);
+end;
+
+(*
+P06_ChooseOptionMulti
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Function P06_ChooseOptionMulti(Text: TStringArray): Boolean;
+
+Chooses an option on the right click game Choose Option pannel.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_ChooseOptionMulti(['quickly']); - Bank
+
+*)
+Function P06_ChooseOptionMulti(Text: TStringArray): Boolean;
+Var
+  WhiteBoxT,BlueBoxT,YellowBoxT,OrangeBoxT,FoundText: String;
+  OptionTB:TBox;
+  OptionBoxTPA1: TPointArray;
+  NumberOfOptions,C,X,Y: Integer;
+Begin
+  FindColors(OptionBoxTPA1, 4674653, P06_MSX1, P06_MSY1, P06_ClientWidth-1, P06_ClientHeight-1);
+  OptionTB:=getTPABounds(OptionBoxTPA1);
+  If (Length(OptionBoxTPA1) < 10) Then
+  Begin
+    Result:=False;
+    Exit;
+  End;
+  NumberOfOptions:=((OptionTB.Y2-2) - (OptionTB.Y1+21)) / 14;
+  For C:=0 To (NumberOfOptions-1) Do
+  Begin
+    If (OptionTB.Y1+21+(C*15)) > OptionTB.Y1+21+((C+1)*14) Then
+    Begin
+      Result:=False;
+      Exit;
+    End;
+    WhiteBoxT:=GetTextAtExWrap(OptionTB.X1+2, OptionTB.Y1+21+(C*15), OptionTB.X2-2, OptionTB.Y1+21+((C+1)*14), 0, 5, 1, 16777215, 5, 'P06UpChars');
+    BlueBoxT:=GetTextAtExWrap(OptionTB.X1+2, OptionTB.Y1+21+(C*15), OptionTB.X2-2, OptionTB.Y1+21+((C+1)*14), 0, 5, 1, 16776960, 5, 'P06UpChars');
+    YellowBoxT:=GetTextAtExWrap(OptionTB.X1+2, OptionTB.Y1+21+(C*15), OptionTB.X2-2, OptionTB.Y1+21+((C+1)*14), 0, 5, 1, 65535, 5, 'P06UpChars');
+    OrangeBoxT:=GetTextAtExWrap(OptionTB.X1+2, OptionTB.Y1+21+(C*15), OptionTB.X2-2, OptionTB.Y1+21+((C+1)*14), 0, 5, 1, 4231423, 5, 'P06UpChars');
+    FoundText:=WhiteBoxT+' '+BlueBoxT+YellowBoxT+OrangeBoxT;
+    If (P06_ContainsText(FoundText,Text)) Then
+    Begin
+      MMouse(RandomRange(OptionTB.X1+2,OptionTB.X2-2),RandomRange(OptionTB.Y1+21+(C*14),OptionTB.Y1+21+((C+1)*14)),0,0);
+      ClickMouse2(mouse_left);
+      Result:=True;
+      Exit;
+    End;
+  End;
+  GetMousePos(X,Y);
+  If Y > 21 Then
+    MMouse(RandomRange(OptionTB.X1+2,OptionTB.X2-2),RandomRange(Y-10,Y-20),0,0)
+  Else
+    MMouse(RandomRange(5,535),RandomRange(350,490),0,0);
+  Result:=False;
+End;
+
+(*
+P06_InventoryTab
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Function P06_InventoryTab(TabNumber:Integer;): Boolean;
+
+Switches/Checks Current InventoryTab 0-12.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_TabInventoryTab(3);  - Inventory
+
+*)
+Procedure P06_TabInventoryTab(TabNumber:Integer);
+Var
+  X,Y:Integer;
+Begin
+  If (Not (GetColor(585, 175) = 46336)) Then
+  Case TabNumber Of
+  0:Begin
+      If (Not FindColorTolerance(X,Y,2237027,557,176,560,180,32)) Then
+        P06_MouseBox(550,182,566,190, mouse_left);
+    End;
+  1:Begin
+      If (Not FindColorTolerance(X,Y,2237027,590,171,595,184,32)) Then
+        P06_MouseBox(576,173,592,197, mouse_left);
+    End;
+  2:Begin
+      If (Not FindColorTolerance(X,Y,2237027,615,171,622,174,32)) Then
+        P06_MouseBox(604,174,621,200, mouse_left);
+    End;
+  3:Begin
+      If (Not FindColorTolerance(X,Y,2237027,629,173,633,181,32)) Then
+        P06_MouseBox(630,173,661,195, mouse_left);
+    End;
+  4:Begin
+      If (Not FindColorTolerance(X,Y,2237027,677,170,690,177,32)) Then
+        P06_MouseBox(674,173,690,198, mouse_left);
+    End;
+  5:Begin
+    If (Not FindColorTolerance(X,Y,2237027,702,172,705,180,32)) Then
+        P06_MouseBox(702,174,718,200, mouse_left);
+    End;
+  6:Begin
+    If (Not FindColorTolerance(X,Y,2237027,730,173,732,180,32)) Then
+        P06_MouseBox(731,174,739,197, mouse_left);
+    End;
+  7:Begin
+    If (Not FindColorTolerance(X,Y,2237027,586,495,594,498,32)) Then
+        P06_MouseBox(575,469,593,497, mouse_left);
+    End;
+  8:Begin
+    If (Not FindColorTolerance(X,Y,2237027,613,495,622,498,32)) Then
+        P06_MouseBox(606,469,622,497, mouse_left);
+    End;
+  9:Begin
+    If (Not FindColorTolerance(X,Y,2237027,629,495,632,498,32)) Then
+        P06_MouseBox(632,472,662,495, mouse_left);
+    End;
+  10:Begin
+    If (Not FindColorTolerance(X,Y,2237027,673,474,680,480,32)) Then
+        P06_MouseBox(674,470,694,495, mouse_left);
+    End;
+  11:Begin
+    If (Not FindColorTolerance(X,Y,2237027,701,481,705,487,32)) Then
+        P06_MouseBox(701,469,718,495, mouse_left);
+    End;
+  12:Begin
+    If (Not FindColorTolerance(X,Y,2237027,728,478,733,494,32)) Then
+        P06_MouseBox(729,470,738,493, mouse_left);
+    End;
+  End;
+End;
+
+(*
+P06_DropInventorySlot
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_DropInventorySlot;
+
+Checks if there is an Item in Inventory slot and returns true or false.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    If P06_InFull Then P06_DropInventorySlot(0);
+
+*)
+Procedure P06_DropInventorySlot(SlotToDrop: Integer);
+Var
+  xsx,ysy,R,C:Integer;
+Begin
+  xsx:=569;
+  ysy:=217;
+  C:=(Round(SlotToDrop/4));
+  R:=(SlotToDrop -(C*4));
+  If P06_ItemExists(SlotToDrop) Then
+  Begin
+    P06_MouseBox(xsx+(R*42), ysy+(C*36), xsx+(R*42)+30, ysy+(C*36)+24, mouse_right);
+    P06_ChooseOptionMulti(['Drop']);
+  End;
+End;
+
+(*
+P06_DropAll
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_DropAll;
+
+Checks if there is an Item in Inventory slot and returns true or false.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    If P06_InFull Then P06_DropAll;
+
+*)
+Procedure P06_DropAll;
+Var
+  I:Integer;
+Begin
+  P06_TabInventoryTab(3);
+  For I:=0 To 27 Do
+    P06_DropInventorySlot(I);
+End;
+
+(*
+P06_DropAllSkip
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_DropAllSkip(SkipSlots:Array of Integer);
+
+Drops everything in inventory. Ignores slots specified by SkipSlots array.
+
+.. note::
+
+    by Nava2, modified by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    If P06_InFull Then P06_DropAllSkip([0]);
+
+*)
+Procedure P06_DropAllExcept(SkipSlots: TIntegerArray);
+Var
+  Inv,I,L:Integer;
+Begin
+  P06_TabInventoryTab(3);
+  L:=High(SkipSlots);
+  For I := 0 To L Do
+    { Set the bit associated with the DontDrop Array }
+    Inv := Inv Or (1 Shl SkipSlots[I]);
+  For I := 0 To 27 Do
+    { Check the bit at i, and if its high, then we dont drop. }
+    If (((Inv Shr I) And 1) = 0) Then
+      P06_DropInventorySlot(I);
+End;
+
+(*
+P06_BankScreen
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Function P06_BankScreen: Boolean;
+
+Checks if the Bank Panel is up and returns true or false.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    If P06_BankScreen Then DoSomething();
+
+*)
+Function P06_BankScreen: Boolean;
+Begin
+  Result:=(GetTextAtExWrap(184, 35, 243, 47, 0, 5, 1, 2070783, 10, 'P06UpChars')='The Bank');
+End;
+
+(*
+P06_DepositInventorySlot
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_DepositInventorySlot(SlotToDrop: Integer; DepositAll:Boolean);
+
+Deposits item from inventory slot.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    If P06_BankScreen Then P06_Deposit(0, 27, True);
+
+*)
+Procedure P06_DepositInventorySlot(SlotToDrop: Integer; DepositAll:Boolean);
+Var
+  xsx,ysy,R,C:Integer;
+Begin
+  xsx:=569;
+  ysy:=217;
+  C:=(Round(SlotToDrop/4));
+  R:=(SlotToDrop -(C*4));
+  If P06_ItemExists(SlotToDrop) Then
+  Begin
+    If (DepositAll) Then
+    Begin
+      P06_MouseBox(xsx+(R*42), ysy+(C*36), xsx+(R*42)+30, ysy+(C*36)+24,mouse_right);
+      P06_ChooseOptionMulti(['Store All','All']);
+      Wait(RandomRange(300,500));
+    End Else
+      P06_MouseBox(xsx+(R*42), ysy+(C*36), xsx+(R*42)+30, ysy+(C*36)+24,mouse_left);
+  End;
+End;
+
+(*
+P06_Deposit
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_Deposit(SlotFrom, SlotTo: Integer; DepositAll:Boolean);
+
+Deposits items from inventory from slots int-int if bank is open.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    If P06_BankScreen Then P06_Deposit(0, 27, False);
+    If P06_BankScreen And P06_InvFull Then P06_Deposit(0, 27, True);
+
+*)
+Procedure P06_Deposit(SlotFrom, SlotTo: Integer; DepositAll: Boolean);
+Var
+  I:Integer;
+Begin
+  If (Not P06_BankScreen) Then
+    Exit;
+  For I:=SlotFrom To SlotTo Do
+  Begin
+    P06_DepositInventorySlot(I,DepositAll);
+  End;
+End;
+
+(*
+P06_MakeCameraAngleHigh
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_MakeCameraAngleHigh;
+
+Make's The Game's Camera Angle Highest.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_MakeCameraAngleHigh;
+
+*)
+Procedure P06_MakeCameraAngleHigh;
+Begin
+  If (Not P06_LoggedIn) Then
+    Exit;
+  KeyDown(38);
+  Wait(RandomRange(1800,2000));
+  KeyUp(38);
+End;
+
+(*
+P06_MakeCameraAngleLow
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_MakeCameraAngleLow;
+
+Make's The Game's Camera Angle Lowest.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_MakeCameraAngleLow;
+
+*)
+Procedure P06_MakeCameraAngleLow;
+Begin
+  If (Not P06_LoggedIn) Then
+    Exit;
+  KeyDown(40);
+  Wait(RandomRange(1800,2000));
+  KeyUp(40);
+End;
+
+(*
+P06_GetCompassAngle
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Function P06_GetCompassAngle: Integer;
+
+Gets Compass Angle 0-360
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_GetCompassAngle
+
+*)
+Function P06_GetCompassAngle: Integer;
+Var
+  X,Y: Integer;
+  AtAngle,AngleResult: Extended;
+Begin
+  If FindDTMRotated(P06_CompassDTM,X,Y,P06_CompassX1,P06_CompassX2,P06_CompassY1,P06_CompassY2, 0, (2*Pi), Pi/180, AtAngle) Then
+  Begin
+    AngleResult:=Degrees(AtAngle);
+  End
+  Else
+    AngleResult:=0;
+  Result:=Round(AngleResult);
+End;
+
+(*
+P06_MakeCompassDegree
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_MakeCompassDegree(MakeAngle: Integer);
+
+Makes Compass Angle 5-355
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_MakeCompassDegree(5); Or P06_MakeCompassDegree(355); //North
+    P06_MakeCompassDegree(180); //South
+
+*)
+Procedure P06_MakeCompassDegree(MakeAngle: Integer);
+Var
+  WaitsDone,CurAngle,CurAngleR,CurAngleL,LeftDist,RightDist,StepsL,StepsR: Integer;
+  KeyToHold: Word;
+Begin
+  //LOL At How Bad This Math Is, Meh Works - Danny
+  WaitsDone:=0;
+  KeyToHold:=37;
+  If (Not P06_LoggedIn) Then
+    Exit;
+  CurAngle:=P06_GetCompassAngle;
+  CurAngleR:=CurAngle+5;
+  If (CurAngleR>360) Then
+    CurAngleR:=CurAngleR-360;
+  CurAngleL:=CurAngle-5;
+  If (CurAngleL<0) Then
+    CurAngleL:=(360-(CurAngleL*-1));
+  If (MakeAngle < 5) Then
+    MakeAngle:=5;
+  If (MakeAngle > 355) Then
+    MakeAngle:=355;
+  If (MakeAngle < CurAngleR) And (MakeAngle > CurAngleL) Then
+    Exit;
+  StepsL:=0;
+  LeftDist:=CurAngle;
+  Repeat Begin
+    LeftDist:=LeftDist-1;
+    If (LeftDist<0) Then
+      LeftDist:=360;
+    StepsL:=StepsL+1;
+  End; Until (LeftDist=MakeAngle)
+  StepsR:=0;
+  RightDist:=CurAngle;
+  Repeat Begin
+    RightDist:=RightDist+1;
+    If (RightDist>360) Then
+      RightDist:=0;
+    StepsR:=StepsR+1;
+  End; Until (RightDist=MakeAngle)
+  If StepsL > StepsR Then
+    KeyToHold:=39;
+  KeyDown(KeyToHold);
+  Repeat Begin
+    WaitsDone:=WaitsDone+1;
+    CurAngle:=P06_GetCompassAngle;
+    CurAngleR:=CurAngle+10;
+    If (CurAngleR>360) Then
+      CurAngleR:=CurAngleR-360;
+    CurAngleL:=CurAngle-10;
+    If (CurAngleL<0) Then
+      CurAngleL:=(360-(CurAngleL*-1));
+    Wait(10);
+  End; Until ((MakeAngle < CurAngleR) And (MakeAngle > CurAngleL)) Or (WaitsDone>700)
+  wait(RandomRange(10,90));
+  KeyUp(KeyToHold);
+End;
+
+(*
+P06_MakeCompassNorth
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_MakeCompassNorth;
+
+Make's Compass North.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_MakeCompassNorth;
+
+*)
+Procedure P06_MakeCompassNorth;
+Var
+  CurAngle: Integer;
+Begin
+  If (Not P06_LoggedIn) Then
+    Exit;
+  CurAngle:=P06_GetCompassAngle;
+  If CurAngle > 180 Then
+    P06_MakeCompassDegree(355)
+  Else
+    P06_MakeCompassDegree(5);
+End;
+
+(*
+P06_MakeCompassEast
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_MakeCompassEast;
+
+Make's Compass East.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_MakeCompassEast;
+
+*)
+Procedure P06_MakeCompassEast;
+Begin
+  If (Not P06_LoggedIn) Then
+    Exit;
+  P06_MakeCompassDegree(270);
+End;
+
+(*
+P06_MakeCompassWest
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_MakeCompassWest;
+
+Make's Compass West.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_MakeCompassWest;
+
+*)
+Procedure P06_MakeCompassWest;
+Begin
+  If (Not P06_LoggedIn) Then
+    Exit;
+  P06_MakeCompassDegree(90);
+End;
+
+(*
+P06_MakeCompassSouth
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Procedure P06_MakeCompassSouth;
+
+Make's Compass South.
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_MakeCompassSouth;
+
+*)
+Procedure P06_MakeCompassSouth;
+Begin
+  If (Not P06_LoggedIn) Then
+    Exit;
+  P06_MakeCompassDegree(180);
+End;
+
+(*
+P06_FindMMFlag
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    Function P06_FindMMFlag: Boolean;
+
+Waits till the red flag on the minimap is gone
+
+.. note::
+
+    by DannyRS
+
+Example:
+
+.. code-block:: pascal
+
+    P06_FindMMFlag
+
+*)
+Function P06_FindMMFlag: Boolean;
+Var
+  X,Y,WaitsDone: Integer;
+Begin
+  Result:=False;
+  Repeat Begin
+    If (Not FindDTM(P06_FlagDTM,X,Y,P06_MMX1,P06_MMY1,P06_MMX2,P06_MMY2)) Then
+    Begin
+      Result:=True;
+      Exit;
+    End;
+    Wait(RandomRange(50,100));
+    WaitsDone:=WaitsDone+1;
+  End; Until (Result) Or (WaitsDone > 800)
+End;
+
+(*
+P06_FindObj
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function P06_FindObj(color, tol, count : integer; uptext : TStringArray; action : integer): Boolean;
+
+Basic object finder. Doesn't support multicolors, will change it eventually
+
+.. note::
+
+    by Awkwardsaw
+
+Example:
+
+.. code-block:: pascal
+
+    if not P06_FindObj(1267066, 10, 15, ['pen', 'lose', 'oor'], 3) then
+
+*)
+function P06_FindObj(color, tol, count : integer; uptext : TStringArray; action : integer): Boolean;
+var
+  X, Y, A, M, curCTS: Integer;
+  TPA: TPointArray;
+  ATPA: T2DPointArray;
+
+begin
+  Result := False;
+  if not P06_LoggedIn then exit;
+  curCTS := GetColorToleranceSpeed;
+    ColorToleranceSpeed(2);
+    if not FindColorsSpiralTolerance(P06_MSCX, P06_MSCY, TPA, Color, P06_MSX1, P06_MSY1, P06_MSX2, P06_MSY2, tol) then
+    begin
+      ColorToleranceSpeed(curCTS);
+      writeln('Cannot find object');
+      exit;
+    end;
+    ColorToleranceSpeed(curCTS);
+    ATPA := TPAtoATPAEx(TPA, 10, 10);
+    M := High(ATPA);
+    for A := 0 to M do
+    begin
+      if Length(ATPA[A]) < count then
+        continue;
+      if MiddleTPAEx(ATPA[A], X, Y) then
+      begin
+        MMouse(X, Y, 1, 1);
+        Wait(250 + Random(150));
+        if P06_IsUpTextMultiCustom(uptext) then
+        begin
+          if action = 3 then
+          begin
+            result := true;
+            ColorToleranceSpeed(curCTS);
+            exit;
+          end;
+          GetMousePos(X, Y);
+          Mouse(X, Y, 0, 0, action);
+          Result := True;
+          ColorToleranceSpeed(curCTS);
+          Exit;
+        end;
+      end;
+    end;
+  ColorToleranceSpeed(curCTS);
+end;
+
+(*
+P06_FindDoor
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    function P06_FindDoor(Open : boolean) : boolean;
+
+Trys to find a door. If open is true, it will click it if the door is closed. Returns true if finds color and uptext
+
+.. note::
+
+    by Awkwardsaw
+
+Example:
+
+.. code-block:: pascal
+
+    if not P06_FindDoor(true) then
+
+*)
+function P06_FindDoor(Open : boolean) : boolean;
+begin
+  result := false;
+  if not P06_FindObj(1267066, 10, 15, ['pen', 'lose', 'oor'], 3) then
+    exit;
+  if P06_IsUpTextMultiCustom(['pen Door']) and Open then
+    ClickMouse2(mouse_Left);
+  result := true;
+end;
+
+(*
+P06_MMToMSPoint
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: pascal
+
+    procedure P06_MMToMSPoint(var X, Y : Integer);
+
+Converts a Minimap point to a MainScreen Point
+
+.. note::
+
+    by Shatterhand
+
+Example:
+
+.. code-block:: pascal
+
+    P06_MMToMSPoint(X,Y);
+
+*)
+procedure P06_MMToMSPoint(var X, Y : Integer);
+var
+  x1, y1 : Integer;
+begin
+  x1 := X;
+  y1 := X;
+
+  X := Round((X-P06_MMCX)*255/40) + P06_MSCX;
+  Y := Round((Y-P06_MMCY)*176/28) + P06_MSCY;
+
+  if X < MSX1 then X := MSX1;
+  if Y < MSY1 then Y := MSY1;
+  if X > MSX2 then X := MSX2;
+  if Y > MSY2 then Y := MSY2;
+end;
+
+Procedure P06_SetGlobals;
+Begin
+  AutoUpdateMe;
+  GetClientDimensions(P06_ClientWidth,P06_ClientHeight);
+
+  P06_MSX1:=4;
+  P06_MSX2:=514;
+  P06_MSY1:=4;
+  P06_MSY2:=337;
+  P06_MIX1:=565;
+  P06_MIX2:=730;
+  P06_MIY1:=210;
+  P06_MIY2:=460;
+  P06_MMX1:=575;
+  P06_MMX2:=720;
+  P06_MMY1:=9;
+  P06_MMY2:=159;
+  P06_CompassX1:=545;
+  P06_CompassX2:=0;
+  P06_CompassY1:=584;
+  P06_CompassY2:=37;
+
+  P06_MSCX:=(((P06_MSX2-P06_MSX1)/2)+P06_MSX1);
+  P06_MSCY:=(((P06_MSY2-P06_MSY1)/2)+P06_MSY1);
+  P06_MICX:=649;
+  P06_MICY:=339;
+  P06_MMCX:=648;
+  P06_MMCY:=83;
+
+  P06_outline_black:=65536;
+  P06_outline_white:=16777215;
+  P06_outline_yellow:=65535;
+
+  If P06_MouseSpeed > 0 Then
+    MouseSpeed:=P06_MouseSpeed
+  Else
+    MouseSpeed:=15;
+
+  P06_PName:=P06_PlayerName;
+  P06_PPass:=P06_PlayerPass;
+
+  P06_CompassDTM:= DTMFromString('mAAEAAHic42FgYDBjYmAwBGJrJggbhE2A2BKKdaDYEYgdgFiEAYH5gVgSiNmgmBeI5YCYC4g5oWwGBkYMbA8kYRhdjguqn1iMaTp+jAwAjdcEyA==');
+  P06_FlagDTM := DTMFromString('mWAAAAHicY2FgYNjCxMCwDog3MkHYXgwQ7A7ELkD8Hw2jA0Y0DAIA2fcH8w==');
+End;
+
+Procedure P06_FreeGlobals;
+Begin
+  //FreeBitmap();
+  //FreeDTM();
+  FreeDTM(P06_CompassDTM);
+  FreeDTM(P06_FlagDTM);
+End;
+
+Procedure SetupP06Include;
+Begin
+  P06_SetGlobals;
+  AddOnTerminate('P06_FreeGlobals');
+End;
