@@ -25,13 +25,13 @@ var
 begin
   begin
     Writeln('Checking P06Include VersionNumber');
-    OnlineVersion := GetPage('http://projectrs06-srl-include.googlecode.com/files/P06Include-VersionNumber.txt');
+    OnlineVersion := GetPage('https://projectrs06-srl-include.googlecode.com/svn/trunk/P06IncludeVersionNumber.txt');
     Writeln('P06Include Local  : ' + P06_VersionNumber);
     Writeln('P06Include Latest : ' + OnlineVersion);
     if (Trim(OnlineVersion) > P06_VersionNumber) then
     begin
       Writeln('New P06Include Version Available! Updating...');
-      NewScript := GetPage('http://projectrs06-srl-include.googlecode.com/files/P06Include.simba');
+      NewScript := GetPage('https://projectrs06-srl-include.googlecode.com/svn/trunk/P06Include.simba');
       NewFileName := AppPath + 'Includes\P06Include\P06Include.simba';
       NewFile := RewriteFile(NewFileName, true);
       try
