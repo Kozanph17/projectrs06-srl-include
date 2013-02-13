@@ -1,9 +1,10 @@
 //Projectrs06 SRL Include (P06)
-//Last Update [12/2/13][D/M/Y]
+//Last Update [13/2/13][D/M/Y]
 //Currently Developed by DannyRS, rjj95, John, Shatterhand, Awkwardsaw
 
 Const
-  P06_VersionNumber='1.0';
+  P06_AutoUpdateInclude = True;
+  P06_VersionNumber = '1.0';
 
 Var
   P06_PName,P06_PPass,P06_PlayerName,P06_PlayerPass: String;
