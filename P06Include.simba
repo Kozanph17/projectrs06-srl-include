@@ -20,7 +20,7 @@ Var
 
 //Credits to Harry and Shuttleu
 //Edited by DannyRS and Shatterhand
-procedure AutoUpdateMe;
+procedure P06_AutoUpdateMe;
 var
     NewFile : Integer;
     OnlineVersion, NewScript, NewFileName : String;
@@ -1234,7 +1234,9 @@ end;
 
 Procedure P06_SetGlobals;
 Begin
-  AutoUpdateMe;
+  If P06_AutoUpdateInclude Then
+    P06_AutoUpdateMe;
+
   GetClientDimensions(P06_ClientWidth,P06_ClientHeight);
 
   P06_MSX1:=4;
