@@ -18,6 +18,7 @@ Var
   P06_MouseSpeed: Integer;
 
 //Credits to Harry and Shuttleu
+//Edited by DannyRS and Shatterhand
 procedure AutoUpdateMe;
 var
     NewFile : Integer;
@@ -26,8 +27,7 @@ begin
   begin
     Writeln('Checking P06Include VersionNumber');
     OnlineVersion := GetPage('https://projectrs06-srl-include.googlecode.com/svn/trunk/P06IncludeVersionNumber.txt');
-    Writeln('P06Include Local  : ' + P06_VersionNumber);
-    Writeln('P06Include Latest : ' + OnlineVersion);
+    Writeln('Local  : ' + P06_VersionNumber + 'Latest : ' + OnlineVersion);
     if (Trim(OnlineVersion) > P06_VersionNumber) then
     begin
       Writeln('New P06Include Version Available! Updating...');
