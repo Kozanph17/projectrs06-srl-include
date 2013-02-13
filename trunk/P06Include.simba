@@ -27,7 +27,7 @@ begin
   begin
     Writeln('Checking P06Include VersionNumber');
     OnlineVersion := GetPage('https://projectrs06-srl-include.googlecode.com/svn/trunk/P06IncludeVersionNumber.txt');
-    Writeln('Local  : ' + P06_VersionNumber + 'Latest : ' + OnlineVersion);
+    Writeln('Local : ' + P06_VersionNumber + ' / Latest : ' + OnlineVersion);
     if (Trim(OnlineVersion) > P06_VersionNumber) then
     begin
       Writeln('New P06Include Version Available! Updating...');
